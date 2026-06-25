@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Documentos SPS</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col selection:bg-yellow-400 selection:text-slate-900">
+
+    <!-- HEADER PRINCIPAL -->
+    <header class="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo e Branding Corporativo -->
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-red-50 text-red-600 rounded-xl border border-red-100 shadow-sm">
+                    <i data-lucide="book-open" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                        SPS Itatiaia
+                        <span class="text-xs bg-yellow-100 text-yellow-800 font-semibold px-2 py-0.5 rounded border border-yellow-200">
+                            Digital QA
+                        </span>
+                    </h1>
+                    <p class="text-xs text-slate-500">Portal de Atendimento e Consulta de PDFs</p>
+                </div>
+            </div>
+
+            <!-- Área de Botões e Controles do Topo -->
+            <div class="flex items-center flex-wrap gap-2.5">
+                <a id="btnSharepointFolder" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold text-sm rounded-lg transition-all shadow-sm border border-yellow-500/20">
+                    <i data-lucide="folder-open" class="w-4 h-4 text-red-600"></i>
+                    <span class="hidden sm:inline">Pasta SharePoint</span>
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-800"></i>
+                </a>
+
+                <!-- Estado Bloqueado / Desbloqueado -->
+                <div id="editingControls" class="hidden flex items-center gap-1.5 bg-yellow-50 border border-yellow-200 rounded-lg p-1">
+                    <span class="text-xs text-yellow-800 font-bold px-2 flex items-center gap-1">
+                        <i data-lucide="unlock" class="w-3 h-3 text-red-600"></i> Painel de Edição
+                    </span>
+                    <button onclick="handleLogout()" class="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded transition-colors shadow-sm">
+                        Bloquear
+                    </button>
+                </div>
+
+                <button id="btnEnableEditing" onclick="openModal('passwordModal')" class="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-sm font-medium transition-colors">
+                    <i data-lucide="lock" class="w-4 h-4 text-red-600"></i>
+                    <span>Ativar Edição</span>
+                </button>
+
+                <button id="btnSettings" onclick="openModal('settingsModal')" class="hidden p-2 bg-white hover:bg-slate-100 text-slate-600 rounded-lg transition-colors border border-slate-200 shadow-sm" title="Configurar Link Base do SharePoint">
+                    <i data-lucide="settings" class="w-4 h-4 text-slate-800"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- RÓTULO FLUTUANTE DE STATUS DE EDIÇÃO -->
+    <div id="editingBanner" class="hidden bg-red-600 text-white text-xs font-bold py-1.5 px-4 text-center tracking-wide flex items-center justify-center gap-2 shadow-inner">
+        <i data-lucide="settings" class="w-4 h-4 animate-spin text-white"></i>
+        <span>MODO DE EDIÇÃO ATIVO: Agora é possível cadastrar, importar e excluir links de PDFs.</span>
+    </div>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+        
+        <!-- WIDGET ADMINISTRATIVO DE AÇÕES RÁPIDAS -->
+        <div id="adminWidget" class="hidden bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="p-2 bg-red-50 text-red-600 rounded-lg border border-red-100 shrink-0 mt-1">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900">Gerenciador de Links e Documentos</h3>
+                    <p class="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                        Utilize o botão de lote para carregar listas longas copiadas diretamente do SharePoint, ou use o botão de cadastro manual para adicionar um PDF individual.
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2.5 w-full md:w-auto">
+                <button onclick="openModal('importModal')" class="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg font-semibold text-xs transition-all">
+                    <i data-lucide="upload" class="w-4 h-4 text-slate-500"></i>
+                    Importar Lote
+                </button>
+                <button onclick="openModal('addModal')" class="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 rounded-lg font-bold text-xs transition-colors shadow-sm border border-yellow-500/30">
+                    <i data-lucide="plus" class="w-4 h-4 text-red-600"></i>
+                    Cadastrar PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- BARRA DE FILTROS E BUSCA -->
+        <div class="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col gap-4 shadow-sm">
+            <div class="flex flex-col md:flex-row gap-3">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400"></i>
+                    <input type="text" id="searchInput" placeholder="Busque pelo nome exato do arquivo PDF..." class="w-full bg-slate-50 border border-slate-200 hover:border-yellow-400 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 text-slate-800 placeholder-slate-400 rounded-xl py-2.5 pl-11 pr-4 text-sm transition-all outline-none">
+                    <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs bg-slate-200 px-1.5 py-0.5 rounded">Limpar</button>
+                </div>
+
+                <div class="flex items-center gap-2 justify-between md:justify-start">
+                    <button id="btnFavFilter" onclick="toggleFavFilter()" class="px-3 py-2.5 rounded-xl border text-sm font-medium transition-all duration-150 flex items-center gap-2 bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100">
+                        <i id="favFilterIcon" data-lucide="heart" class="w-4 h-4"></i>
+                        <span>Favoritos</span>
+                    </button>
+
+                    <div class="bg-slate-100 border border-slate-200 p-1 rounded-xl flex items-center gap-1">
+                        <button id="btnGrid" onclick="setViewMode('grid')" class="p-1.5 rounded-lg transition-colors bg-yellow-400 text-slate-900" title="Visualização em Grade">
+                            <i data-lucide="grid" class="w-4 h-4"></i>
+                        </button>
+                        <button id="btnList" onclick="setViewMode('list')" class="p-1.5 rounded-lg transition-colors text-slate-500 hover:text-slate-700" title="Visualização em Tabela">
+                            <i data-lucide="list" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- METADADOS / QUANTIDADES -->
+        <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+            <span>
+                Mostrando <strong id="docCount" class="text-slate-800">0</strong> de <strong id="totalCount" class="text-slate-800">0</strong> arquivos PDF cadastrados
+            </span>
+            <span id="noResultsMsg" class="hidden text-red-600 font-medium">Nenhum resultado corresponde à sua pesquisa atual.</span>
+        </div>
+
+        <!-- CONTAINER PRINCIPAL DE LISTAGEM -->
+        <div id="documentsContainer"></div>
+
+        <!-- RODAPÉ -->
+        <footer class="mt-8 border-t border-slate-200 pt-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <p>© 2026 Portal SPS Itatiaia Digital QA. Identidade Visual Corporativa.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-600"></span> 
+                    SPS Base Ativa
+                </span>
+                <span id="footerRestoreSeparator" class="hidden">•</span>
+                <button id="btnRestoreDefaults" onclick="restoreDefaults()" class="hidden hover:text-slate-800 underline transition-colors">
+                    Restaurar Lista Padrão
+                </button>
+            </div>
+        </footer>
+    </main>
+
+    <!-- MODAL: SOLICITAÇÃO DE SENHA -->
+    <div id="passwordModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative text-slate-800">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="lock" class="text-red-600 w-5 h-5"></i> Painel Restrito
+                </h3>
+                <button onclick="closeModal('passwordModal')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Para habilitar o cadastro, exclusão e importação de documentos, por favor, insira a senha autorizada do SPS.</p>
+            <form onsubmit="handlePasswordSubmit(event)" class="flex flex-col gap-4">
+                <div>
+                    <input type="password" id="passwordInput" placeholder="Insira a senha de 4 dígitos" class="w-full bg-slate-50 border border-slate-200 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 text-center font-mono tracking-widest text-slate-800 rounded-xl px-4 py-3 text-lg outline-none" required>
+                    <p id="passwordError" class="hidden text-xs text-red-600 font-semibold text-center mt-2 flex items-center justify-center gap-1">
+                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-yellow-600"></i> Senha Incorreta. Tente novamente!
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <button type="button" onclick="closeModal('passwordModal')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-xl transition-colors">Cancelar</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-xs font-bold rounded-xl transition-colors shadow-sm border border-yellow-500/20">Validar Acesso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CUSTOMIZADO: CONFIRMAÇÃO DE EXCLUSÃO -->
+    <div id="deleteConfirmModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-sm p-5 shadow-2xl text-slate-800">
+            <div class="flex items-start gap-3 mb-4">
+                <div class="p-2 bg-red-50 text-red-600 rounded-lg">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-yellow-600"></i>
+                </div>
+                <div>
+                    <h4 class="text-md font-bold text-slate-900">Deseja remover o link?</h4>
+                    <p class="text-xs text-slate-500 mt-1">Isso removerá o botão-link deste PDF do portal. O arquivo original no seu SharePoint não será apagado.</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 text-xs">
+                <button onclick="closeModal('deleteConfirmModal')" class="px-4 py-2 bg-slate-100 text-slate-600 hover:text-slate-800 rounded-lg font-medium transition-colors">Cancelar</button>
+                <button onclick="confirmDeleteDocument()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors shadow-sm">Confirmar Remoção</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CADASTRAR DOCUMENTO MANUALMENTE -->
+    <div id="addModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 shadow-2xl relative text-slate-800">
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <i data-lucide="file-text" class="text-red-600 w-5 h-5"></i> Adicionar Novo Botão de PDF
+            </h3>
+            <form onsubmit="handleAddDocument(event)" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Nome do Arquivo (Exatamente igual ao SharePoint)</label>
+                    <input type="text" id="newDocName" placeholder="ex: Procedimento_Operacional_Padrao_SPS" oninput="updatePreviewUrl()" class="w-full bg-slate-50 border border-slate-200 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 text-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Tamanho do Arquivo (Opcional)</label>
+                    <input type="text" id="newDocSize" placeholder="ex: 1.5 MB ou 750 KB" class="w-full bg-slate-50 border border-slate-200 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 text-slate-800 rounded-xl px-4 py-2.5 text-sm outline-none">
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-500">
+                    <p class="font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-red-600"></i> Link Final SharePoint:
+                    </p>
+                    <p id="previewSharepointUrl" class="font-mono break-all text-slate-400">...</p>
+                </div>
+                <div class="flex items-center justify-end gap-2.5 mt-2">
+                    <button type="button" onclick="closeModal('addModal')" class="px-4 py-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-bold rounded-xl transition-colors shadow-sm border border-yellow-500/20">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: IMPORTAÇÃO DE DOCUMENTOS EM LOTE -->
+    <div id="importModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative text-slate-800">
+            <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <i data-lucide="upload" class="text-red-600 w-5 h-5"></i> Importação Inteligente de PDFs
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Copie do SharePoint ou planilha e cole abaixo (um arquivo por linha). Processamos nomes complexos e geramos os links corretos.</p>
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Insira os nomes dos PDFs:</label>
+                    <textarea id="bulkText" rows="7" placeholder="Relatorio_Qualidade_Maio.pdf&#10;Instrucoes_De_Suporte_Redes&#10;Especificacao_Sistema_Atendimento.pdf" class="w-full bg-slate-50 border border-slate-200 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 text-slate-800 font-mono rounded-xl p-3.5 text-xs outline-none"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2.5">
+                    <button type="button" onclick="closeModal('importModal')" class="px-4 py-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">Cancelar</button>
+                    <button onclick="handleBulkImport()" class="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-bold rounded-xl transition-colors shadow-sm border border-yellow-500/20">Gerar Todos os Botões</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIGURAÇÃO DE URL DO SHAREPOINT -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative text-slate-800">
+            <h3 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <i data-lucide="settings" class="text-red-600 w-5 h-5"></i> Configurações Avançadas do SharePoint
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Apenas edite essa seção se a pasta física `SPS` no servidor de arquivos do SharePoint for renomeada.</p>
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Link da Pasta de Trabalho Principal</label>
+                    <textarea id="sharepointUrlInput" rows="4" class="w-full bg-slate-50 border border-slate-200 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 text-slate-800 font-mono rounded-xl p-3 text-xs outline-none"></textarea>
+                </div>
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-500">
+                    <strong class="text-slate-700">Estrutura de links diretos:</strong>
+                    <p class="font-mono mt-1 text-red-600 break-all"><span id="settingsBaseFolderPreview"></span>[Nome-do-Arquivo].pdf</p>
+                </div>
+                <div class="flex items-center justify-end gap-2.5">
+                    <button onclick="resetSharepointUrl()" class="px-3 py-2 text-slate-500 hover:text-slate-800 text-xs font-medium transition-colors">Link Padrão</button>
+                    <button onclick="saveSharepointUrl()" class="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-sm font-bold rounded-xl transition-colors shadow-sm border border-yellow-500/20">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts da Aplicação -->
+    <script>
+        const INITIAL_DOCUMENTS = [
+            { id: '1', name: 'Procedimento_Operacional_Padrao_QA.pdf', size: '1.2 MB', date: '2026-05-15', favorite: true },
+            { id: '2', name: 'Manual_de_Integracao_SPS_Digital.pdf', size: '4.5 MB', date: '2026-04-10', favorite: false },
+            { id: '3', name: 'Checklist_Validacao_Entregas.pdf', size: '420 KB', date: '2026-06-01', favorite: true },
+            { id: '4', name: 'Relatorio_Mensal_Qualidade_Q1.pdf', size: '2.8 MB', date: '2026-05-30', favorite: false },
+            { id: '5', name: 'Especificacao_Tecnica_Ambientes.pdf', size: '3.1 MB', date: '2026-03-22', favorite: false }
+        ];
+
+        const DEFAULT_URL = 'https://pgone.sharepoint.com/sites/Itatiaia-DigitalQA/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FItatiaia%2DDigitalQA%2FShared%20Documents%2FSPS&viewid=65194455%2Dcb3d%2D41e1%2Da61b%2D1ab0dbf9b84b';
+        const BASE_SHAREPOINT_FOLDER = "https://pgone.sharepoint.com/sites/Itatiaia-DigitalQA/Shared%20Documents/SPS/";
+
+        // State variables
+        let documents = JSON.parse(localStorage.getItem('sps_documents')) || INITIAL_DOCUMENTS;
+        let sharepointUrl = localStorage.getItem('sps_sharepoint_url') || DEFAULT_URL;
+        let searchTerm = '';
+        let viewMode = 'grid'; // 'grid' ou 'list'
+        let onlyFavorites = false;
+        let isEditingMode = false;
+        let docToDeleteId = null;
+
+        // Init App
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            document.getElementById('btnSharepointFolder').href = sharepointUrl;
+            document.getElementById('settingsBaseFolderPreview').innerText = BASE_SHAREPOINT_FOLDER;
+            
+            // Search Event Listeners
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                searchTerm = e.target.value;
+                document.getElementById('clearSearchBtn').classList.toggle('hidden', searchTerm === '');
+                renderDocuments();
+            });
+
+            renderDocuments();
+            updateUIState();
+        });
+
+        // Helpers functions
+        const generatePdfUrl = (filename) => {
+            const encodedFilename = encodeURIComponent(filename.trim());
+            return `${BASE_SHAREPOINT_FOLDER}${encodedFilename}`;
+        };
+
+        const updateDataAndRender = () => {
+            localStorage.setItem('sps_documents', JSON.stringify(documents));
+            renderDocuments();
+        };
+
+        // Render Logic
+        function renderDocuments() {
+            const container = document.getElementById('documentsContainer');
+            
+            const filteredDocuments = documents.filter(doc => {
+                const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesFavorite = !onlyFavorites || doc.favorite;
+                return matchesSearch && matchesFavorite;
+            });
+
+            document.getElementById('docCount').innerText = filteredDocuments.length;
+            document.getElementById('totalCount').innerText = documents.length;
+            document.getElementById('noResultsMsg').classList.toggle('hidden', filteredDocuments.length > 0);
+
+            if (filteredDocuments.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            if (viewMode === 'grid') {
+                container.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${filteredDocuments.map(generateGridItem).join('')}</div>`;
+            } else {
+                container.innerHTML = `
+                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold tracking-wider">
+                                        <th class="py-3.5 px-4 w-12 text-center">Fav</th>
+                                        <th class="py-3.5 px-4">Nome do PDF</th>
+                                        <th class="py-3.5 px-4 w-28">Tamanho</th>
+                                        <th class="py-3.5 px-4 w-36">Modificado em</th>
+                                        <th class="py-3.5 px-4 text-right w-44">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${filteredDocuments.map(generateListItem).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+            }
+
+            // Refresh icons para os elementos novos recém criados
+            lucide.createIcons({ root: container });
+        }
+
+        function generateGridItem(doc) {
+            const fileUrl = generatePdfUrl(doc.name);
+            const favIconClasses = doc.favorite ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100';
+            const favFill = doc.favorite ? 'fill="currentColor"' : 'fill="none"';
+            
+            return `
+            <div class="bg-white border border-slate-200 hover:border-yellow-400 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all hover:translate-y-[-2px] hover:shadow-md group relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1.5 h-full bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-3.5">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="file-text" class="w-4 h-4 text-red-600"></i>
+                            <span class="text-[11px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">${doc.size || 'N/A'}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="toggleFavorite('${doc.id}')" class="p-1.5 rounded-lg transition-colors ${favIconClasses}" title="Favoritar Documento">
+                                <i data-lucide="heart" class="w-4 h-4" ${favFill}></i>
+                            </button>
+                            ${isEditingMode ? `
+                            <button onclick="promptDelete('${doc.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors" title="Remover Link Permanente">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 shrink-0">
+                            <i data-lucide="file-text" class="w-6 h-6"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="text-sm font-semibold text-slate-800 group-hover:text-red-700 transition-colors line-clamp-2 break-all" title="${doc.name}">${doc.name}</h4>
+                            <span class="text-[11px] text-slate-400 block mt-1">Cadastrado: ${doc.date}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                    <button id="copyBtn_${doc.id}" onclick="copyToClipboard('${fileUrl}', '${doc.id}')" class="inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg border transition-all bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Copiar Link</span>
+                    </button>
+                    <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-bold rounded-lg bg-yellow-400 hover:bg-yellow-500 text-slate-900 transition-all shadow-sm border border-yellow-500/20">
+                        <span>Abrir PDF</span>
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-red-600"></i>
+                    </a>
+                </div>
+            </div>`;
+        }
+
+        function generateListItem(doc) {
+            const fileUrl = generatePdfUrl(doc.name);
+            const favColor = doc.favorite ? 'text-yellow-500' : 'text-slate-300 hover:text-slate-500';
+            const favFill = doc.favorite ? 'fill="currentColor"' : 'fill="none"';
+
+            return `
+            <tr class="hover:bg-slate-50 transition-colors group">
+                <td class="py-3 px-4 text-center">
+                    <button onclick="toggleFavorite('${doc.id}')" class="p-1 rounded transition-colors ${favColor}">
+                        <i data-lucide="heart" class="w-4 h-4" ${favFill}></i>
+                    </button>
+                </td>
+                <td class="py-3 px-4">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="file-text" class="w-4 h-4 text-red-600 shrink-0"></i>
+                        <span class="font-semibold text-slate-700 group-hover:text-red-700 transition-colors break-all">${doc.name}</span>
+                    </div>
+                </td>
+                <td class="py-3 px-4 text-slate-500 text-xs font-mono">${doc.size || 'N/A'}</td>
+                <td class="py-3 px-4 text-slate-500 text-xs">${doc.date}</td>
+                <td class="py-3 px-4">
+                    <div class="flex items-center justify-end gap-2">
+                        <button id="copyBtnList_${doc.id}" onclick="copyToClipboard('${fileUrl}', '${doc.id}', true)" class="p-2 rounded-lg text-xs font-medium border transition-colors bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100" title="Copiar Link de Compartilhamento">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                        <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="p-2 bg-yellow-400 hover:bg-yellow-500 text-slate-900 rounded-lg transition-colors border border-yellow-500/20" title="Visualizar no SharePoint">
+                            <i data-lucide="external-link" class="w-4 h-4 text-red-600"></i>
+                        </a>
+                        ${isEditingMode ? `
+                        <button onclick="promptDelete('${doc.id}')" class="p-2 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors" title="Remover">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>` : ''}
+                    </div>
+                </td>
+            </tr>`;
+        }
+
+        // Actions 
+        function toggleFavorite(id) {
+            documents = documents.map(doc => doc.id === id ? { ...doc, favorite: !doc.favorite } : doc);
+            updateDataAndRender();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchTerm = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            renderDocuments();
+        }
+
+        function toggleFavFilter() {
+            onlyFavorites = !onlyFavorites;
+            const btn = document.getElementById('btnFavFilter');
+            const icon = btn.querySelector('i');
+            
+            if (onlyFavorites) {
+                btn.className = 'px-3 py-2.5 rounded-xl border text-sm font-medium transition-all duration-150 flex items-center gap-2 bg-yellow-100 text-yellow-800 border-yellow-300';
+                icon.setAttribute('fill', 'currentColor');
+                icon.classList.add('text-yellow-600');
+            } else {
+                btn.className = 'px-3 py-2.5 rounded-xl border text-sm font-medium transition-all duration-150 flex items-center gap-2 bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100';
+                icon.setAttribute('fill', 'none');
+                icon.classList.remove('text-yellow-600');
+            }
+            renderDocuments();
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            document.getElementById('btnGrid').className = `p-1.5 rounded-lg transition-colors ${mode === 'grid' ? 'bg-yellow-400 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`;
+            document.getElementById('btnList').className = `p-1.5 rounded-lg transition-colors ${mode === 'list' ? 'bg-yellow-400 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`;
+            renderDocuments();
+        }
+
+        function copyToClipboard(text, id, isList = false) {
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            const btnId = isList ? `copyBtnList_${id}` : `copyBtn_${id}`;
+            const btn = document.getElementById(btnId);
+            const originalClasses = btn.className;
+            const originalHTML = btn.innerHTML;
+
+            if (isList) {
+                btn.className = 'p-2 rounded-lg text-xs font-medium border transition-colors bg-yellow-50 text-yellow-800 border-yellow-200';
+                btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-yellow-600"></i>`;
+            } else {
+                btn.className = 'inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg border transition-all bg-yellow-100 text-yellow-800 border-yellow-300';
+                btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-yellow-600 font-bold"></i><span>Copiado!</span>`;
+            }
+            
+            lucide.createIcons({ root: btn });
+
+            setTimeout(() => {
+                btn.className = originalClasses;
+                btn.innerHTML = originalHTML;
+                lucide.createIcons({ root: btn });
+            }, 2000);
+        }
+
+        // Modals / Admin Features
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if (id === 'passwordModal') {
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordError').classList.add('hidden');
+                document.getElementById('passwordInput').classList.remove('border-red-500');
+                setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+            }
+            if (id === 'settingsModal') {
+                document.getElementById('sharepointUrlInput').value = sharepointUrl;
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function updateUIState() {
+            document.getElementById('editingControls').classList.toggle('hidden', !isEditingMode);
+            document.getElementById('btnEnableEditing').classList.toggle('hidden', isEditingMode);
+            document.getElementById('btnSettings').classList.toggle('hidden', !isEditingMode);
+            document.getElementById('editingBanner').classList.toggle('hidden', !isEditingMode);
+            document.getElementById('adminWidget').classList.toggle('hidden', !isEditingMode);
+            document.getElementById('btnRestoreDefaults').classList.toggle('hidden', !isEditingMode);
+            document.getElementById('footerRestoreSeparator').classList.toggle('hidden', !isEditingMode);
+            renderDocuments(); // refresh icons/buttons like Delete
+        }
+
+        function handlePasswordSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('passwordInput');
+            if (input.value === '2832') {
+                isEditingMode = true;
+                closeModal('passwordModal');
+                updateUIState();
+            } else {
+                document.getElementById('passwordError').classList.remove('hidden');
+                input.classList.add('border-red-500');
+                input.value = '';
+            }
+        }
+
+        function handleLogout() {
+            isEditingMode = false;
+            updateUIState();
+        }
+
+        function promptDelete(id) {
+            docToDeleteId = id;
+            openModal('deleteConfirmModal');
+        }
+
+        function confirmDeleteDocument() {
+            if (docToDeleteId) {
+                documents = documents.filter(doc => doc.id !== docToDeleteId);
+                updateDataAndRender();
+                docToDeleteId = null;
+                closeModal('deleteConfirmModal');
+            }
+        }
+
+        function updatePreviewUrl() {
+            const name = document.getElementById('newDocName').value;
+            let formattedName = name.trim();
+            if (formattedName && !formattedName.toLowerCase().endsWith('.pdf')) {
+                formattedName += '.pdf';
+            }
+            document.getElementById('previewSharepointUrl').innerText = formattedName ? generatePdfUrl(formattedName) : '...';
+        }
+
+        function handleAddDocument(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('newDocName').value;
+            const sizeInput = document.getElementById('newDocSize').value;
+
+            if (!nameInput) return;
+
+            let formattedName = nameInput.trim();
+            if (!formattedName.toLowerCase().endsWith('.pdf')) {
+                formattedName += '.pdf';
+            }
+
+            const newDoc = {
+                id: Date.now().toString(),
+                name: formattedName,
+                size: sizeInput || 'N/A',
+                date: new Date().toISOString().split('T')[0],
+                favorite: false
+            };
+
+            documents = [newDoc, ...documents];
+            updateDataAndRender();
+            
+            document.getElementById('newDocName').value = '';
+            document.getElementById('newDocSize').value = '';
+            updatePreviewUrl();
+            closeModal('addModal');
+        }
+
+        function handleBulkImport() {
+            const text = document.getElementById('bulkText').value;
+            if (!text.trim()) return;
+
+            const lines = text.split('\n');
+            const newDocs = [];
+
+            lines.forEach((line, index) => {
+                let name = line.trim();
+                if (!name) return;
+
+                if (name.includes('/')) {
+                    name = name.split('/').pop();
+                }
+
+                if (!name.toLowerCase().endsWith('.pdf')) {
+                    name += '.pdf';
+                }
+
+                newDocs.push({
+                    id: `${Date.now()}-${index}`,
+                    name: name,
+                    size: 'N/A',
+                    date: new Date().toISOString().split('T')[0],
+                    favorite: false
+                });
+            });
+
+            if (newDocs.length > 0) {
+                documents = [...newDocs, ...documents];
+                updateDataAndRender();
+            }
+            
+            document.getElementById('bulkText').value = '';
+            closeModal('importModal');
+        }
+
+        function saveSharepointUrl() {
+            sharepointUrl = document.getElementById('sharepointUrlInput').value;
+            localStorage.setItem('sps_sharepoint_url', sharepointUrl);
+            document.getElementById('btnSharepointFolder').href = sharepointUrl;
+            closeModal('settingsModal');
+        }
+
+        function resetSharepointUrl() {
+            document.getElementById('sharepointUrlInput').value = DEFAULT_URL;
+        }
+
+        function restoreDefaults() {
+            documents = INITIAL_DOCUMENTS;
+            updateDataAndRender();
+        }
+    </script>
+</body>
+</html>
